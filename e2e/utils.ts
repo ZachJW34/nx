@@ -5,48 +5,37 @@ import * as path from 'path';
 
 const projectName: string = 'proj';
 
+export function uniq(prefix: string) {
+  return `${prefix}${Math.floor(Math.random() * 10000000)}`;
+}
+
 export function runNgNew(command?: string, silent?: boolean): string {
-  return execSync(
+  const buffer = execSync(
     `../node_modules/.bin/ng new proj --no-interactive ${command}`,
     {
       cwd: `./tmp`,
       ...(silent ? { stdio: ['ignore', 'ignore', 'ignore'] } : {})
     }
-  ).toString();
+  );
+  return buffer ? buffer.toString() : null;
 }
 
 export function newProject(): void {
   cleanup();
   if (!directoryExists('./tmp/proj_backup')) {
-    // TODO delete the try catch after 0.8.0 is released
-    try {
-      runNgNew('--collection=@nrwl/schematics --npmScope=proj', true);
-    } catch (e) {}
+    runNgNew('--collection=@nrwl/schematics --npmScope=proj', true);
     copyMissingPackages();
     execSync('mv ./tmp/proj ./tmp/proj_backup');
   }
   execSync('cp -a ./tmp/proj_backup ./tmp/proj');
 }
-
-export function newBazelProject(): void {
-  cleanup();
-  if (!directoryExists('./tmp/proj_bazel_backup')) {
-    // TODO delete the try catch after 0.8.0 is released
-    try {
-      runNgNew('--collection=@nrwl/bazel --npmScope=proj', true);
-    } catch (e) {}
-    copyMissingPackages();
-    execSync('mv ./tmp/proj ./tmp/proj_backup');
+export function ensureProject(): void {
+  if (!directoryExists('./tmp/proj')) {
+    console.log('NEW PROJECT');
+    console.log('NEW PROJECT');
+    console.log('NEW PROJECT');
+    newProject();
   }
-  execSync('cp -a ./tmp/proj_bazel_backup ./tmp/proj');
-}
-
-export function createNxWorkspace(command: string): string {
-  cleanup();
-  return execSync(
-    `node ../node_modules/@nrwl/schematics/bin/create-nx-workspace.js ${command}`,
-    { cwd: `./tmp` }
-  ).toString();
 }
 
 export function copyMissingPackages(): void {
@@ -57,9 +46,44 @@ export function copyMissingPackages(): void {
     '@angular/upgrade',
     'npm-run-all',
     'yargs',
-    'yargs-parser'
+    'yargs-parser',
+
+    'cypress',
+    '@types/jquery',
+    'jest',
+    '@types/jest',
+    'jest-preset-angular',
+    'karma',
+    'karma-chrome-launcher',
+    'karma-coverage-istanbul-reporter',
+    'karma-jasmine',
+    'karma-jasmine-html-reporter',
+    'jasmine-core',
+    'jasmine-spec-reporter',
+    'jasmine-marbles',
+    '@types/jasmine',
+    '@types/jasminewd2',
+    '@nestjs',
+    'express',
+    '@types/express'
   ];
   modulesToCopy.forEach(m => copyNodeModule(projectName, m));
+  updateFile(
+    'node_modules/@angular-devkit/schematics/tasks/node-package/executor.js',
+    `
+    function default_1() {
+      return () => {
+        const rxjs = require("rxjs");
+        return new rxjs.Observable(obs => {
+          obs.next();
+          obs.complete();
+        });
+      };
+    }
+    exports.default = default_1;
+  `
+  );
+
   execSync('rm -rf tmp/proj/node_modules/.bin/webpack');
   execSync(
     `cp -a node_modules/.bin/webpack tmp/proj/node_modules/.bin/webpack`
@@ -127,16 +151,17 @@ export function runCLI(
   }
 }
 
+export function expectTestsPass(v: { stdout: string; stderr: string }) {
+  expect(v.stderr).toContain('Ran all test suites');
+  expect(v.stderr).not.toContain('fail');
+}
+
 export function newApp(name: string): string {
   return runCLI(`generate app --no-interactive ${name}`);
 }
 
 export function newLib(name: string): string {
   return runCLI(`generate lib --no-interactive ${name}`);
-}
-
-export function newModule(name: string): string {
-  return runCLI(`generate module ${name}`);
 }
 
 export function runCommand(command: string): string {
@@ -177,10 +202,6 @@ export function readFile(f: string) {
 
 export function cleanup() {
   execSync('rm -rf ./tmp/proj');
-}
-
-export function purge() {
-  execSync('rm -rf ./tmp');
 }
 
 export function getCwd(): string {

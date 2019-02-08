@@ -11,7 +11,7 @@ import {
   runCLIAsync
 } from '../utils';
 
-describe('Nrwl Convert to Nx Workspace', () => {
+xdescribe('Nrwl Convert to Nx Workspace', () => {
   beforeEach(cleanup);
 
   it('should generate a workspace', () => {
@@ -50,7 +50,6 @@ describe('Nrwl Convert to Nx Workspace', () => {
 
     // run the command
     runCLI('add @nrwl/schematics --npmScope projscope');
-    copyMissingPackages();
 
     // check that prettier config exits and that files have been moved!
     checkFilesExist(
@@ -308,7 +307,6 @@ describe('Nrwl Convert to Nx Workspace', () => {
 
     // Add @nrwl/schematics
     runCLI('add @nrwl/schematics --npmScope projscope');
-    copyMissingPackages();
 
     checkFilesExist('apps/proj/tsconfig.server.json');
 
@@ -365,7 +363,7 @@ describe('Nrwl Convert to Nx Workspace', () => {
     runCLI('add @angular/pwa');
     runCLI('add @ngrx/store');
     runCLI('add @ngrx/effects');
-    copyMissingPackages();
+
     // Add Nx
     runCLI('add @nrwl/schematics');
   });
